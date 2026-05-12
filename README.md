@@ -1,5 +1,3 @@
-# Boids
-
 <!-- omit in toc -->
 # Simulazione di stormi
 
