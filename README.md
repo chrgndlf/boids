@@ -1,175 +1,324 @@
 <!-- omit in toc -->
-# Simulazione di stormi
+# Progetto d'esame per l'a.a. 2024/2025
 
-- [Descrizione del problema](#descrizione-del-problema)
-- [Controllo dei vicini](#controllo-dei-vicini)
-- [Le regole di volo](#le-regole-di-volo)
-  - [Regola 1: separazione](#regola-1-separazione)
-  - [Regola 2: allineamento](#regola-2-allineamento)
-  - [Regola 3: coesione](#regola-3-coesione)
-- [Implementazione del modello](#implementazione-del-modello)
-- [Comportamento ai bordi](#comportamento-ai-bordi)
-- [Variazioni sul tema](#variazioni-sul-tema)
-- [Suggerimenti sull'implementazione](#suggerimenti-sullimplementazione)
-- [Riferimenti utili](#riferimenti-utili)
+- [Introduzione](#introduzione)
+- [Preparazione](#preparazione)
+- [Input/Output](#inputoutput)
+- [Relazione](#relazione)
+- [Consegna](#consegna)
+- [Come creare l'archivio](#come-creare-larchivio)
+- [Valutazione](#valutazione)
+- [Eventuale riconsegna](#eventuale-riconsegna)
+- [Svolgimento del colloquio orale](#svolgimento-del-colloquio-orale)
+- [Uso di sistemi di Intelligenza Artificiale](#uso-di-sistemi-di-intelligenza-artificiale)
 
-## Descrizione del problema
+## Introduzione
 
-Il progetto consiste nell'implementazione di una simulazione del comportamento
-degli stormi di uccelli in volo in uno spazio bidimensionale.
+Questa repository contiene la descrizione dei temi proposti per il progetto
+d'esame per l'a.a. 2024/2025 e le modalità per la preparazione e la consegna.
 
-Reso noto da un software di intelligenza artificiale realizzato nel 1986, la
-simulazione si basa sull'interazione tra agenti detti *boids* in uno spazio. Nel
-modello più elementare gli agenti determinano la loro traiettoria tramite tre
-regole:
+Il progetto d'esame consiste nell'implementazione di uno o più programmi in C++,
+accompagnati da una breve relazione di presentazione.
 
-- *separazione*: un boid si allontana dai boids vicini
-- *allineamento*: un boid tende ad allinearsi alle traiettorie dei boids vicini
-- *coesione*: un boid tende a muoversi verso il baricentro dei boids vicini
+I progetti proposti riguardano:
 
-Modelli più complessi introducono altre regole, per esempio per evitare gli
-ostacoli o per gestire stormi differenti.
+- [Simulazione dell'interazione tra due specie](volterra.md)
+- [Simulazione del comportamento di stormi](boids.md)
+- [Dinamica in un biliardo triangolare](biliardo.md)
+- [Rete neurale di Hopfield](hopfield.md)
+  
+È possibile presentare il progetto su un altro tema a propria scelta, purché di
+complessità paragonabile e concordato preventivamente con i docenti.
 
-## Controllo dei vicini
+## Preparazione
 
-Le regole di volo vengono applicate tenendo conto dei boids "vicini". La
-vicinanza tra boids può essere determinata in base alla loro posizione. Dato un
-boid $b_i$, i suoi vicini sono tutti i boids $b_j$ per cui:
+Raccomandiamo di svolgere il progetto in gruppo, fino a un massimo (non
+derogabile) di quattro persone; data la sua semplicità, il progetto "Simulazione
+dell'interazione tra due specie" può essere svolto in un gruppo di al massimo
+due persone. Il progetto può però essere preparato anche singolarmente.
 
-```math
-\left|\vec{x}_{b_i}-\vec{x}_{b_j}\right|\lt {d}
+Il programma deve essere scritto in C++ standard, seguendo le indicazioni e le
+raccomandazioni fornite a lezione nel corso dell'anno. È ammesso l'uso di
+librerie esterne (ad esempio per la grafica), ma queste devono essere
+disponibili sulla piattaforma di riferimento (Ubuntu 24.04).
+Specificatamente all'uso della libreria SFML su macOS, si seguano
+[queste istruzioni](SFML26_macOS.md).
+
+Ogni programma deve essere costituito da **almeno due** *translation unit*.
+Indicativamente la logica del programma va suddivisa tra uno o più header file
+(con estensione `.hpp`) e tra uno o più file sorgente (con estensione `.cpp`);
+la funzionalità va poi richiamata da un ulteriore file contenente il `main`.
+
+Il codice deve essere formattato adeguatamente (con `clang-format` o strumento
+equivalente). Il file di configurazione dello strumento di formattazione
+(`.clang-format` nel caso di `clang-format`) deve essere consegnato insieme al
+progetto.
+
+Nomi di file, funzioni, tipi, variabili, ecc. devono essere descrittivi e
+seguire convenzioni ortografiche e di lingua uniformi.
+
+Tutte le entità del programma (tipi, funzioni, ecc.) devono essere dichiarate
+dentro un unico `namespace`.
+
+I nomi di file e directory non devono contenere spazi ed essere in carattere
+minuscolo.
+
+È richiesta la scrittura di *unit test*, usando
+[*Doctest*](https://github.com/doctest/doctest) o altro strumento analogo.
+
+Per il *build* del codice deve essere utilizzato [*CMake*](https://cmake.org/).
+Questa repository contiene un file [`CMakeLists.txt`](CMakeLists.txt) di
+esempio; per adattarlo al proprio progetto seguire i suggerimenti inclusi nel
+file stesso sotto forma di commenti. Le opzioni di compilazione, in particolare
+per *warning*, asserzioni nella standard library e *sanitizer*, non possono
+essere rilassate.
+
+Nel caso si voglia approfondire l'uso di CMake, consigliamo di partire dalla
+*Getting Started Guide* di [Professional
+CMake](https://crascit.com/professional-cmake/), disponibile gratuitamente, o
+dal [CMake
+Tutorial](https://cmake.org/cmake/help/latest/guide/tutorial/index.html)
+disponibile sul sito di CMake.
+
+Se si usano librerie esterne (ad es. SFML), queste devono essere facilmente
+installabili con il comando `apt install` oppure essere integrate nel build
+con CMake del progetto.
+
+I comandi che useremo durante la valutazione per configurare e buildare il
+progetto saranno indicativamente i seguenti:
+
+```shell
+cmake -S . -B build -G"Ninja Multi-Config"
+cmake --build build --config Debug
+cmake --build build --config Debug --target test
+cmake --build build --config Release
+cmake --build build --config Release --target test
 ```
 
-## Le regole di volo
+Sincerarsi quindi che funzionino correttamente.
 
-Le regole di volo vengono usate per determinare ognuna una componente della
-variazione di velocità del boid a cui vengono applicate.
+Né la compilazione né l'esecuzione devono generare messaggi diagnostici, né in
+modalità Debug né in modalità Release. Nel caso dovessero esserci segnalazioni
+generate da codice di terzi (ad es. dalla libreria grafica), queste vanno
+indicate nella relazione.
 
-Per ogni boid $b_i$:
+In questa repository sono già anche disponibili i file [`doctest.h`](doctest.h)
+e [`.clang-format`](.clang-format). Quest'ultimo può essere adattato alle
+proprie preferenze stilistiche.
 
-```math
-\vec{v}_{b_i}=\vec{v}_{b_i}+\vec{v}_1+\vec{v}_2+\vec{v}_3
+I commenti nel codice devono essere minimali e avere lo scopo esclusivo di
+aiutare noi a comprendere eventuali passaggi complessi.
+
+Verranno valutati positivamente anche l'uso di *Git* come strumento
+collaborativo e l'adozione di ogni altro strumento utile al miglioramento del
+software prodotto. Se lo sviluppo avviene in una repository *Git*, potete
+indicarne l'indirizzo nella relazione; se la repository è privata ed è tenuta su
+[GitHub](https://github.com/), potete condividerla con noi aggiungendo gli
+account `giacomini`, `battibass` e `fferrari1990`. Naturalmente questo **non**
+sostituisce la consegna secondo le modalità indicate sotto.
+
+## Input/Output
+
+Si consiglia di limitare al minimo indispensabile il codice dedicato all'input
+di parametri e all'output di risultati, sia nel caso di applicazioni da
+terminale sia di applicazioni grafiche, e di concentrarsi invece sulla logica
+del programma.
+
+Nel caso di parametri letti da uno *stream* di input (ad es. lettura di
+parametri da terminale via `std::cin` o da file) o passati sulla linea di
+comando, viene richiesto solo di verificare che il tipo del valore letto/passato
+sia corretto e che il valore letto/passato sia valido (ad es., nel caso di un
+parametro numerico, che sia all'interno di un certo intervallo); se così non
+fosse, il comportamento richiesto è di notificare l'utente con un adeguato
+messaggio d'errore e uscire dal programma. Non bisogna ri-chiedere all'utente un
+altro valore.
+
+Anche nel caso di lettura di parametri tramite *widget* grafici è richiesta la
+validazione rigorosa dei valori letti. In caso di errore però non è opportuno
+chiudere l'applicazione.
+
+## Relazione
+
+La relazione di accompagnamento rappresenta una guida alla comprensione del
+codice e alla valutazione del lavoro nel suo complesso. La relazione deve essere
+sintetica (indicativamente di lunghezza non superiore a qualche pagina) e deve
+contenere:
+
+- titolo del progetto
+- autore o autori del lavoro
+- data, corrispondente alle ultime modifiche al codice (giorno più, giorno meno)
+- eventuali modifiche intercorse dalla consegna precedente
+- descrizione sintetica del tema del progetto, solo nel caso questo non sia uno
+  dei temi da noi proposti
+- descrizione sintetica delle principali scelte progettuali e implementative
+- eventuali librerie esterne da installare con `apt install`
+- istruzioni dettagliate su come eseguire il programma o i programmi che fanno
+  parte del progetto
+- descrizione precisa dei parametri di input e del formato di output, con degli
+  esempi immediatamente usabili da noi per la valutazione
+- interpretazione dei risultati ottenuti
+- strategia di test per verificare che quanto ottenuto sia ragionevolmente
+  esente da errori
+- dichiarazione di eventuale uso di sistemi di Intelligenza Artificiale
+  generativa (vedi sotto)
+- ogni altra informazione utile agli obiettivi sopra citati
+
+La relazione deve essere in formato `pdf` o *markdown* (il formato con cui è
+composto questo testo). Per un risultato tipografico eccellente si suggerisce di
+provare LaTeX, o sul proprio PC o su strumenti online, ad es.
+[overleaf](https://overleaf.com). Se si usano altri sistemi (ad es. MS Word o
+LibreOffice), ricordarsi di esportare in formato `pdf`.
+
+## Consegna
+
+La consegna avverrà su [virtuale](https://virtuale.unibo.it) in prossimità di
+ogni appello (indicativamente 10 giorni prima, contemporaneamente all'iscrizione
+su [AlmaEsami](https://almaesami.unibo.it)) tramite un file archivio `.zip` o
+`.tgz`. Ogni studente/studentessa deve inviare l'archivio, anche se il lavoro è
+svolto in gruppo. La consegna va fatta ogni volta che ci si iscrive ad un
+appello, anche se nel frattempo non sono intercorse modifiche al codice. Se il
+lavoro è svolto in gruppo ed è lo stesso per tutti i componenti del gruppo,
+chiediamo di caricare lo stesso identico archivio.
+
+L'archivio deve contenere:
+
+- il codice sorgente e tutte e sole le risorse necessarie alla compilazione e
+  all'esecuzione (ad esempio eventuali immagini e font)
+- una breve relazione di accompagnamento
+
+L'archivio **non** deve contenere altro. A titolo puramente indicativo,
+l'archivio non deve contenere:
+
+- la directory di build di CMake
+- file di output ottenuti dall'esecuzione del programma
+- directory quali `__MACOSX` o file con suffisso `_Zone.Identifier`
+
+Verificare che non ci siano file inutili nascosti; per scoprirli usare il
+comando `ls -A`.
+
+Prima di creare l'archivio, verificate attentamente il contenuto e fate
+eventualmente pulizia di tutto quanto non va consegnato.
+
+## Come creare l'archivio
+
+Supponendo che tutto il codice e la relazione si trovino in una cartella
+`progetto`, per creare un archivio in formato `zip`:
+
+```shell
+$ ls
+progetto
+$ zip -r progetto.zip progetto
+$ ls
+progetto progetto.zip
 ```
 
-```math
-\vec{x}_{b_i}=\vec{x}_{b_i}+\vec{v}_{b_i} \Delta t
+Per creare un archivio in formato `tgz`:
+
+```shell
+$ ls
+progetto
+$ tar zcf progetto.tgz progetto
+$ ls
+progetto progetto.tgz
 ```
 
-dove $\vec{v}_1$, $\vec{v}_2$ e $\vec{v}_3$ sono le velocità ottenute
-dall'applicazione delle tre regole.
+Prima di produrre l'archivio sincerarsi che la directory contenga la relazione.
+Una volta creato l'archivio, consigliamo di sincerarsi che, una volta
+scompattato, contenga tutto quanto necessario per la compilazione e
+l'esecuzione. Per scompattare, spostarsi in un'altra cartella e usare i comandi
+`unzip progetto.zip` o `tar zxf progetto.tgz`, quindi riprovare il build, i test
+e l'esecuzione del programma o dei programmi.
 
-### Regola 1: separazione
+## Valutazione
 
-La regola ha lo scopo di evitare che i boids collidano tra di loro.
+La valutazione si basa su cinque criteri:
 
-```math
-\vec{v}_1 = -s\sum_{j\ne i}(\vec{x}_{b_j}-\vec{x}_{b_i})\quad \text{se}\quad \left|\vec{x}_{b_i}-\vec{x}_{b_j}\right|\lt d_s
-```
+- La **qualità della relazione** intende valutare la capacità della relazione di
+  accompagnare il lettore nella comprensione del programma, nelle varie scelte
+  di design, di implementazione, di ricerca della correttezza. Si tiene inoltre
+  in conto la correttezza lessicale e grammaticale, nonché l'uso corretto della
+  lingua (italiana o inglese).
 
-Usando la distanza come fattore per determinare la nuova velocità permette di
-avere una accelerazione graduale del boid che si allontana. Un opportuno fattore
-di separazione $s$ determina l'intensità della repulsione. La distanza $d_s < d$
-stabilisce il range di influenza della regola.
+- La **qualità del design** del programma intende valutare quanto il design
+  dell'applicazione è appropriato per risolvere il problema proposto. Elementi
+  considerati sono, a titolo esemplificativo, la suddivisione del codice in
+  classi e funzioni dai nomi significativi, la loro progettazione e il loro uso
+  secondo le indicazioni date a lezione, la *const-correctness*, la suddivisione
+  del codice in più file header e sorgente, il passaggio appropriato dei
+  parametri alle funzioni.
 
-### Regola 2: allineamento
+- La **qualità dell'implementazione** del programma intende valutare
+  l'applicazione corretta ed efficiente dei costrutti del linguaggio C++
+  nell'implementazione del programma, secondo le convenzioni consolidate e
+  proposte a lezione. Verranno considerati, ad esempio, la leggibilità del
+  codice, la scelta di nomi significativi per le variabili, la corretta
+  formattazione del codice, l'uso corretto della standard library, l'uso di
+  algoritmi invece di cicli espliciti, la corretta generazione di numeri
+  (pseudo)casuali.
 
-Lo scopo della regola è fare in modo che i boids tendano a procedere nella
-stessa direzione dello stormo.
+- La **correttezza del programma** intende valutare quanto il comportamento del
+  programma in esecuzione sia aderente a quanto specificato nella consegna e,
+  per quel che riguarda aspetti non specificati o eventuali varianti, nella
+  relazione. Verranno anche considerate le strategie e le tecniche utilizzate
+  per verificare che il programma si comporti correttamente, la completezza dei
+  test, la validazione dei dati di input.
 
-```math
-\vec{v}_2 = a(\frac{1}{n-1}\sum_{j\ne i}\vec{v}_{b_j} - \vec{v}_{b_i})
-```
+- L'**originalità della soluzione** intende valutare innanzitutto il rispetto di
+  quanto previsto nella descrizione del progetto. Un giudizio oltre la
+  sufficienza dipende dall'esplorazione di altre opzioni e varianti ovvero
+  dall'utilizzo di strumenti, librerie, tecniche aggiuntivi.
 
-Viene sottratta alla media delle velocità dei boids (escluso il boid su cui è
-applicata la regola) la velocità attuale del boid $b_i$. Il tutto moltiplicato
-per un fattore di allineamento $a<1$ che determina la rapidità con cui il boid
-sterza.
+Ogni criterio sarà valutato secondo la scala: *insufficiente*, *sufficiente*,
+*buono*, *ottimo*. Indipendentemente dalla valutazione complessiva ottenuta, la
+sufficienza si intende acquisita solo se la valutazione di ogni singolo criterio
+è almeno sufficiente.
 
-### Regola 3: coesione
+## Eventuale riconsegna
 
-La regola induce il boid a volare verso il centro di massa dei boid vicini. Il
-centro di massa è dato da:
+La valutazione del progetto vale per tutto l'anno accademico, ma è possibile
+effettuare ulteriori riconsegne in caso questa sia risultata insufficiente, o
+per migliorarla anche se già sufficiente.
 
-```math
-\vec{x}_{c} = \frac{1}{n-1}\sum_{j\ne i}\vec{x}_{b_j}
-```
+In entrambi i casi, si richiede di **proporre variazioni significative**
+rispetto alla consegna precedente.
 
-La velocità $\vec{v}_3$ si ottiene sottraendo la posizione attuale del boid alla
-posizione del centro di massa, moltiplicando poi il risultato per un fattore di
-coesione $c$ opportuno:
+Riconsegne individuali sono ammesse anche se il progetto è stato sviluppato
+originariamente in gruppo ma i diversi componenti del gruppo si presentano
+all'orale ad appelli diversi.
 
-```math
-\vec{v}_3 = c(\vec{x}_{c}-\vec{x}_{b_i})
-```
+In tal caso, al fine di migliorare la valutazione, è necessario che le
+variazioni apportate al progetto *vadano oltre a quelle proposte dai docenti*
+durante i colloqui affrontati da coloro che hanno già sostenuto l'esame.
 
-## Implementazione del modello
+In qualsiasi caso, **le variazioni** intercorse tra le diverse versioni del
+progetto **vanno elencate** esplicitamente **all'inizio della nuova relazione**,
+altrimenti verrà confermata la valutazione precedente.
 
-Progettare e implementare un programma che riproduca il modello sopra descritto.
+Si possono presentare progetti che siano già stati presentati in anni accademici
+precedenti da parte di persone dello stesso gruppo solo se includono variazioni
+significative e originali.
 
-Il programma accetta in input almeno il numero di boids e i parametri $d$, $d_s$, $s$, $a$ e $c$ delle regole di volo.
+## Svolgimento del colloquio orale
 
-Il programma dovrebbe mostrare in output alcuni parametri di descrizione collettiva dello stormo, quali l'andamento nel tempo della distanza media tra i boids e della loro velocità media e le rispettive deviazioni standard.
+Chi è ammesso alla prova orale è pregato di attenersi alle seguenti linee guida:
 
-Se propriamente simulati, i boids nel tempo dovrebbero tendere ad avvicinarsi e ad avere velocità mediamente simili tra di loro, assumendo il comportamento di uno stormo coeso.
+- Si presenti con il proprio portatile (o con un portatile in prestito).
+- Installi sul portatile una versione del progetto d'esame coerente con quella
+  consegnata e verifichi che compili prima del colloquio.
+- Disabiliti *copilot* o qualsiasi funzionalità analoga, qualora sia presente
+  nella sua IDE di sviluppo.
 
-## Comportamento ai bordi
+## Uso di sistemi di Intelligenza Artificiale
 
-Si suggerisce di implementare una regola per determinare il comportamento di un
-boid quando raggiunge un bordo dell'area di simulazione. Due esempi di strategia
-di implementazione posso essere:
+Ai fini dell'apprendimento, sconsigliamo un uso eccessivo di sistemi di
+Intelligenza Artificiale, soprattutto per la generazione del codice. In
+particolare, raccomandiamo di disabilitare strumenti automatici di generazione
+di codice direttamente all'interno dell'editor (ad es. Copilot dentro VSCode).
+L'eventuale uso deve comunque essere conforme alla [policy di
+Ateneo](https://www.unibo.it/it/ateneo/chi-siamo/intelligenza-artificiale/Casi-uso-GenAI-comunita-studentesca-valutazione)
+e dichiarato nella relazione.
 
-- Lo spazio bidimensionale è toroidale, imponendo la periodicità dell'area di
-simulazione: se un boid supera un bordo dell'area di simulazione, viene
-"teletrasportato" al lato opposto.
-
-- Si può introdurre una regola di volo che spinge un boid ad allontanarsi dai
-  bordi: se un boid supera un bordo dell'area di simulazione, gli viene sommata
-  una velocità diretta verso il bordo opposto.
-
-## Variazioni sul tema
-
-È possibile introdurre ulteriori elementi per rendere più elaborato il modello.
-A titolo di esempio:
-
-- Mostrare l'andamento nel tempo della distribuzione dei boids nel piano con degli istogrammi.
-
-- Cambiare il modo in cui vengono individuati i vicini fornendo ai boids un angolo di vista. [esempio](http://www.red3d.com/cwr/boids/images/neighborhood.gif)
-
-- Utilizzare una libreria grafica (ad es. [SFML](https://sfml-dev.org)) per
-  mostrare il volo dei boids nel piano
-
-- Simulare il comportamento di stormi differenti, limitando le regole di volo ai
-  boids appartenenti allo stesso stormo
-
-- Simulare il comportamento di un boid predatore che tende a seguire boids
-  appartenenti ad altri stormi, i quali applicheranno su di esso la sola regola
-  di separazione
-
-## Suggerimenti sull'implementazione
-
-I parametri $s$, $a$, e $c$ delle regole di volo dipendono dall'implementazione
-delle velocità. In linea di principio sono dei fattori di proporzionalità che
-determinano l'influenza di una certa regola sul moto dei boids. Un suggerimento
-è provare in partenza con valori compresi tra 0 e 1, e trovare il range che più
-si adatta alla propria implementazione.
-
-Il parametro $d$ determina la vicinanza tra boids e di conseguenza l'applicazione delle regole di volo; si consiglia di
-scegliere un valore che permetta ai boids di "vedere" i vicini più prossimi. Valori troppo alti risulteranno in voli più
-caotici, mentre valori troppo bassi renderebbero i boids "ciechi". In entrambi i casi sarà difficile il formarsi di
-stormi.
-
-Il parametro $d_s$ determina la soglia di separazione tra boids, il suo valore
-deve essere molto minore del valore $d$ di vicinanza. In tal modo i boids
-potranno tenersi vicini al proprio stormo, senza però sovrapporsi.
-
-E' opportuno introdurre un limite alla velocità massima di volo dei boids per
-evitare comportamenti anomali che potrebbero rendere difficile la simulazione.
-Essendo la simulazione a intervalli di tempo discreti (per forza di cose,
-facendo la simulazione su una macchina digitale), valori di velocità troppo alti
-possono rendere impossibile per i boids "incontrarsi" e quindi adattare il
-proprio volo ai vicini.
-
-## Riferimenti utili
-
-- [Boids - wikipedia](https://it.wikipedia.org/wiki/Boids)
-- [Pagina di Craig Raynolds sui boids](http://www.red3d.com/cwr/boids/)
+Naturalmente tutto il codice consegnato deve rispettare le linee guida
+raccomandate a lezione e deve essere corretto. Durante l'orale lo studente o la
+studentessa devono dimostrare di averlo compreso ed essere in grado di
+riprodurlo autonomamente.
